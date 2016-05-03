@@ -1,15 +1,21 @@
 cmake_minimum_required(VERSION 2.8)
-project(CBS)
+project(Gecode_couting_base_search)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Gecode REQUIRED)
 include_directories(${Gecode_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
-set(SOURCE_FILES main.cpp CBSBrancher.cpp AllDiffCBS.cpp CBSPosValChoice.hpp CBSConstraint.hpp)
+# Sources files
+set(SOURCE_FILES CBSBrancher.cpp AllDiffCBS.cpp CBSPosValChoice.hpp CBSConstraint.hpp)
 
-add_executable(CBS ${SOURCE_FILES})
-target_link_libraries(CBS ${Gecode_LIBRARIES})
+# Problems
+set(DUMMY_PROBLEM problems/DummyProblem.cpp ${SOURCE_FILES})
+add_executable(DummyProblem ${DUMMY_PROBLEM})
+target_link_libraries(DummyProblem ${Gecode_LIBRARIES})
+
+set(SUDOKU problems/Sudoku.cpp ${SOURCE_FILES})
+add_executable(Sudoku ${SUDOKU})
+target_link_libraries(Sudoku ${Gecode_LIBRARIES})

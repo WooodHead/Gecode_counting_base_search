@@ -105,7 +105,7 @@ void CBSBrancher::print(const Space &home, const Choice &c, unsigned int a, std:
  * Method to create brancher
  **********************************************************************************************************************/
 
-void cbsbrancher(Space &home, std::vector<CBSConstraint*> &constraints) {
+void cbsbranch(Space &home, std::vector<CBSConstraint*> &constraints) {
     if (home.failed()) return;
 
     CBSBrancher::post(home, constraints);

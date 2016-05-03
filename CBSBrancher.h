@@ -39,7 +39,7 @@ private:
     std::vector<CBSConstraint*> _constraints;
 };
 
-void cbsbrancher(Space &home, std::vector<CBSConstraint*> &constraints);
+void cbsbranch(Space &home, std::vector<CBSConstraint*> &constraints);
 
 
 #endif //CBS_ALLDIFFCBSBRANCHER_H

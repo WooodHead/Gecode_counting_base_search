@@ -2,8 +2,8 @@
 #include <gecode/minimodel.hh>
 #include <gecode/search.hh>
 
-#include "CBSBrancher.h"
-#include "AllDiffCBS.h"
+#include "../CBSBrancher.h"
+#include "../AllDiffCBS.h"
 
 using namespace Gecode;
 
