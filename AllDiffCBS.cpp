@@ -14,20 +14,17 @@ AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
 AllDiffCBS::DensityMatrix AllDiffCBS::densityMatrix;
 
 
-//template<typename View, typename Val>
 AllDiffCBS::AllDiffCBS(Space &home, const IntVarArgs &x)
         : CBSConstraint(home, x) { }
 
 AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS &c)
         : CBSConstraint(home, share, c) { }
 
-// TODO: Regarder si je retourne pas un pointeur a la place...
 CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
     return new AllDiffCBS(home, share, *this);
 }
 
-//template<typename View, typename Val>
-CBSPosValDensity AllDiffCBS::getDensity() {
+CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) {
     // Minc and Brégman and Liang and Bai upper bound.
     struct UB { double minc; double liangBai; };
     int idx = 0;
@@ -40,12 +37,13 @@ CBSPosValDensity AllDiffCBS::getDensity() {
     // using it.
     densityMatrix.clearMatrix();
 
+    // Function for updating both upper bounds when a domain change.
     auto upperBoundUpdate = [&](UB &_ub, int index, int oldDomSize, int newDomSize) {
         _ub.minc *= mincFactors.get(newDomSize) / mincFactors.get(oldDomSize);
         _ub.liangBai *= liangBaiFactors.get(index, newDomSize) / liangBaiFactors.get(index, oldDomSize);
     };
 
-    struct { int varidx; int val; double density; } next_assignment{0, 0, -1};
+    struct { int pos; int val; double density; } next_assignment{0, 0, -1};
     for (int i = 0; i < _x.size(); i++) {
         if (_x[i].assigned()) {
             densityMatrix.set(i, _x[i].val(), 1); // We have 100% chance taking the variable assigned value.
@@ -54,29 +52,31 @@ CBSPosValDensity AllDiffCBS::getDensity() {
             upperBoundUpdate(varUB, i, _x[i].size(), 1); // Assignation of the variable
             // We calculate the density for every value assignment for the variable
             double normalisationCte = 0;
-            for (Gecode::IntVarValues val(_x[i]); val(); ++val) {
+            for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
-                for (int j = 0; j < _x.size(); j++)
-                    if (_x[j].in(val.val()) && j != i)
+                for (int j = 0; j < _x.size(); j++) {
+                    if (_x[j].in(val.val()) && j != i) {
                         upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
+                    }
+                }
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
                 densityMatrix.set(i, val.val(), lowerUB);
                 normalisationCte += lowerUB;
             }
             // Normalisation
-            for (Gecode::IntVarValues val(_x[i]); val(); ++val) {
+            for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
                 auto d = densityMatrix.get(i, val.val()) / normalisationCte;
                 densityMatrix.set(i, val.val(), d);
-                // We keep track of the pair (var,val) with the highest density
-                if (d > next_assignment.density)
+                // We keep track of the pair (var,val) that we want to return
+                if (comparator(d, next_assignment.density)) {
                     next_assignment = {i, val.val(), d};
+                }
             }
         }
     }
 
-//    return new CBSPosValChoice<int>(*this, 2, next_assignment.varidx, next_assignment.val, 1);
-    return CBSPosValDensity{next_assignment.varidx, next_assignment.val, next_assignment.density};
+    return CBSPosValDensity{next_assignment.pos, next_assignment.val, next_assignment.density};
 }
 
 //template<typename View, typename Val>

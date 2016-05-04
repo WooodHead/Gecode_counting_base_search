@@ -16,9 +16,11 @@ using namespace Gecode;
 
 class CBSBrancher : public Gecode::Brancher {
 public:
-    CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints);
+    CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
+                std::function<bool(double,double)> densityComparator);
 
-    static void post(Space &home, std::vector<CBSConstraint*> &constraints);
+    static void post(Space &home, std::vector<CBSConstraint*> &constraints,
+                     std::function<bool(double,double)> densityComparator);
 
     CBSBrancher(Space &home, bool share, CBSBrancher &b);
 
@@ -37,9 +39,11 @@ public:
 
 private:
     std::vector<CBSConstraint*> _constraints;
+    std::function<bool(double,double)> _densityComparator;
 };
 
-void cbsbranch(Space &home, std::vector<CBSConstraint*> &constraints);
+void cbsbranch(Space &home, std::vector<CBSConstraint*> &constraints,
+               std::function<bool(double, double)> densityComparator);
 
 
 #endif //CBS_ALLDIFFCBSBRANCHER_H

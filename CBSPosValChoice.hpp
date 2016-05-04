@@ -28,7 +28,6 @@ public:
         return sizeof(CBSPosValChoice<Val>);
     }
 
-    // TODO: C'est quoi une archive
     virtual void archive(Archive& e) const {
         PosValChoice<Val>::archive(e);
         e << _arrayIdx;

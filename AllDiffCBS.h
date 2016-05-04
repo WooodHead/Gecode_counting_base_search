@@ -8,12 +8,6 @@
 #include <complex>
 #include "CBSConstraint.hpp"
 
-
-class MincFactors;
-class LiangBaiFactors;
-class DensityMatrix;
-
-//template<typename View, typename Val>
 class AllDiffCBS : public CBSConstraint/*<View, Val>*/ {
 public:
     AllDiffCBS(Space &home, const IntVarArgs &x);
@@ -22,13 +16,13 @@ public:
 
     CBSConstraint *copy(Space &home, bool share, CBSConstraint &c) override;
 
-    CBSPosValDensity getDensity() override;
+    CBSPosValDensity getDensity(std::function<bool(double,double)> comparator) override;
 
     void precomputeDataStruct(int nbVar, int largestDomainSize, int minValue) override;
 
 private:
-/* Factors precomputed for every value in the domain of x. Thoses factors are used to compute the Minc and Brégman
- * upper bound for the permanent. */
+    /* Factors precomputed for every value in the domain of x. Thoses factors are used to compute the Minc and Brégman
+     * upper bound for the permanent. */
     class MincFactors {
     public:
         MincFactors();
@@ -48,8 +42,8 @@ private:
         int largestDomainSize;
     };
 
-/* Factors precomputed for every index and domain size in x. Thoses factors are used to compute the Liang and Bai
- * upper bound for the permanent */
+    /* Factors precomputed for every index and domain size in x. Thoses factors are used to compute the Liang and Bai
+     * upper bound for the permanent */
     class LiangBaiFactors {
     public:
         LiangBaiFactors();
@@ -69,7 +63,7 @@ private:
         int largestDomainSize;
     };
 
-/* Matrix for storing densities calculation. */
+    /* Matrix for storing densities calculation. */
     class DensityMatrix {
     public:
         DensityMatrix();
