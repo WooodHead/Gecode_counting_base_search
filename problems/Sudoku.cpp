@@ -1,4 +1,4 @@
-/*
+/**
  * Based on the Gecode sudoku example by Mikael Lagerkvist, Guido Tack
  * and Christian Schulte.
  *

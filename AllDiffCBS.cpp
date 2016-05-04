@@ -1,7 +1,27 @@
-//
-// Created by sam on 29/04/16.
-//
-
+/**
+ *  Main author:
+ *      Samuel Gagnon
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining
+ *  a copy of this software and associated documentation files (the
+ *  "Software"), to deal in the Software without restriction, including
+ *  without limitation the rights to use, copy, modify, merge, publish,
+ *  distribute, sublicense, and/or sell copies of the Software, and to
+ *  permit persons to whom the Software is furnished to do so, subject to
+ *  the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be
+ *  included in all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
 #include "AllDiffCBS.h"
 
 /***********************************************************************************************************************
@@ -22,7 +42,7 @@ CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
     return new AllDiffCBS(home, share, *this);
 }
 
-CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) {
+CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) const {
     assert(!_x.assigned());
 
     // Minc and Brégman and Liang and Bai upper bound.
@@ -44,14 +64,14 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
     std::vector<double> densities((unsigned long)_x.size());
     auto minDomVal = minDomValue(); // TODO: Regarder si il n'y aurait pas une meilleur façon de faire ça
 
-    struct { int pos; int val; double density; } next_assignment;
-    bool first_assignment = true;
+    struct { int pos; int val; double density; } choice;
+    bool first_choice = true;
     for (int i = 0; i < _x.size(); i++) {
         if (!_x[i].assigned()) {
             auto varUB = ub;
             upperBoundUpdate(varUB, i, _x[i].size(), 1); // Assignation of the variable
+            double normalization = 0; // Normalization constant for keeping all densities values between 0 and 1
             // We calculate the density for every value assignment for the variable
-            double normalisationCte = 0;
             for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
                 double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
@@ -63,25 +83,26 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 }
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
                 *density = lowerUB;
-                normalisationCte += lowerUB;
+                normalization += lowerUB;
             }
-            // Normalisation
+
+            // Normalisation and choice selection
             for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
                 double *density = &densities[val.val() - minDomVal];
-                *density /= normalisationCte;
-                // We keep track of the pair (var,val) that we want to return
-                if (comparator(*density, next_assignment.density) || first_assignment) {
-                    next_assignment = {i, val.val(), *density};
-                    first_assignment = false;
+                *density /= normalization;
+                // Is this new density a better choice than our current one?
+                if (comparator(*density, choice.density) || first_choice) {
+                    choice = {i, val.val(), *density};
+                    first_choice = false;
                 }
             }
         }
     }
 
-    return CBSPosValDensity{next_assignment.pos, next_assignment.val, next_assignment.density};
+    return CBSPosValDensity{choice.pos, choice.val, choice.density};
 }
 
-void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize, int minValue) {
+void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
     mincFactors = MincFactors(largestDomainSize);
     liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
 }
