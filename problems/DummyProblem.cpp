@@ -27,7 +27,7 @@ public:
                 new AllDiffCBS(*this, l2)
         };
 
-        cbsbrancher(*this, constraints);
+        cbsbranch(*this, constraints, std::greater<double>());
     }
 
     DummyProblem(bool share, DummyProblem &s)

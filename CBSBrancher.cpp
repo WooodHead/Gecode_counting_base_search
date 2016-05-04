@@ -27,8 +27,9 @@ CBSBrancher::CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
         params.domSize = std::max(params.domSize, c->maxDomValue() - c->minDomValue() + 1);
     }
 
-    for (auto& c : _constraints)
+    for (auto& c : _constraints) {
         c->precomputeDataStruct(params.nbVar, params.domSize, params.minValue);
+    }
 }
 
 void CBSBrancher::post(Space &home, std::vector<CBSConstraint*> &constraints,

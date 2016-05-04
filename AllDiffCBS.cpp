@@ -11,8 +11,6 @@
 // Static variables declaration
 AllDiffCBS::MincFactors AllDiffCBS::mincFactors;
 AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
-AllDiffCBS::DensityMatrix AllDiffCBS::densityMatrix;
-
 
 AllDiffCBS::AllDiffCBS(Space &home, const IntVarArgs &x)
         : CBSConstraint(home, x) { }
@@ -35,27 +33,27 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                   acc.liangBai * liangBaiFactors.get(idx++, elem.size())};
     });
 
-    // densityMatrix is shared between all instances of this brancher is all spaces. We have to clear its content before
-    // using it.
-    densityMatrix.clearMatrix();
-
     // Function for updating both upper bounds when a domain change.
     auto upperBoundUpdate = [&](UB &_ub, int index, int oldDomSize, int newDomSize) {
         _ub.minc *= mincFactors.get(newDomSize) / mincFactors.get(oldDomSize);
         _ub.liangBai *= liangBaiFactors.get(index, newDomSize) / liangBaiFactors.get(index, oldDomSize);
     };
 
+    // Vector that span the domain of every variables for keeping densities. There's no need to set the vector to zero
+    // at each iteration.
+    std::vector<double> densities((unsigned long)_x.size());
+    auto minDomVal = minDomValue(); // TODO: Regarder si il n'y aurait pas une meilleur façon de faire ça
+
     struct { int pos; int val; double density; } next_assignment;
     bool first_assignment = true;
     for (int i = 0; i < _x.size(); i++) {
-        if (_x[i].assigned()) {
-            densityMatrix.set(i, _x[i].val(), 1); // We have 100% chance taking the variable assigned value.
-        } else {
+        if (!_x[i].assigned()) {
             auto varUB = ub;
             upperBoundUpdate(varUB, i, _x[i].size(), 1); // Assignation of the variable
             // We calculate the density for every value assignment for the variable
             double normalisationCte = 0;
             for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
+                double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
                 for (int j = 0; j < _x.size(); j++) {
@@ -64,16 +62,16 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                     }
                 }
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
-                densityMatrix.set(i, val.val(), lowerUB);
+                *density = lowerUB;
                 normalisationCte += lowerUB;
             }
             // Normalisation
             for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
-                auto d = densityMatrix.get(i, val.val()) / normalisationCte;
-                densityMatrix.set(i, val.val(), d);
+                double *density = &densities[val.val() - minDomVal];
+                *density /= normalisationCte;
                 // We keep track of the pair (var,val) that we want to return
-                if (comparator(d, next_assignment.density) || first_assignment) {
-                    next_assignment = {i, val.val(), d};
+                if (comparator(*density, next_assignment.density) || first_assignment) {
+                    next_assignment = {i, val.val(), *density};
                     first_assignment = false;
                 }
             }
@@ -83,11 +81,9 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
     return CBSPosValDensity{next_assignment.pos, next_assignment.val, next_assignment.density};
 }
 
-//template<typename View, typename Val>
 void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize, int minValue) {
     mincFactors = MincFactors(largestDomainSize);
     liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
-    densityMatrix = DensityMatrix(nbVar, largestDomainSize, minValue);
 }
 
 
@@ -156,39 +152,4 @@ void AllDiffCBS::LiangBaiFactors::precomputeLiangBaiFactors() {
             liangBaiFactors[i - 1][j - 1] = q * (j - q + 1);
         }
     }
-}
-
-/***********************************************************************************************************************
- * DensityMatrix
- **********************************************************************************************************************/
-
-AllDiffCBS::DensityMatrix::DensityMatrix() { }
-
-AllDiffCBS::DensityMatrix::DensityMatrix(int nbVar, int largestDomainSize, int minValue)
-        : nbVar(nbVar), largestDomainSize(largestDomainSize), minValue(minValue) {
-    // We allocate space only once : we can reuse it for each computation.
-    densities = heap.alloc<double *>(nbVar);
-    for (int i = 0; i < nbVar; i++)
-        densities[i] = heap.alloc<double>(largestDomainSize);
-}
-
-AllDiffCBS::DensityMatrix::DensityMatrix(const DensityMatrix &dm)
-        : densities(dm.densities), nbVar(dm.nbVar), largestDomainSize(dm.largestDomainSize), minValue(dm.minValue) { }
-
-void AllDiffCBS::DensityMatrix::clearMatrix() {
-    for (int i = 0; i < nbVar; i++)
-        for (int j = 0; j < largestDomainSize; j++)
-            densities[i][j] = 0;
-}
-
-double AllDiffCBS::DensityMatrix::get(int variablePos, int value) const {
-    assert(variablePos < nbVar);
-    assert(value - minValue < largestDomainSize);
-    return densities[variablePos][value - minValue];
-}
-
-void AllDiffCBS::DensityMatrix::set(int variablePos, int value, double density) {
-    assert(variablePos < nbVar);
-    assert(value - minValue < largestDomainSize);
-    densities[variablePos][value - minValue] = density;
 }

@@ -63,35 +63,9 @@ private:
         int largestDomainSize;
     };
 
-    // TODO: Est-ce que je laisse la matrice de densité partagé par tout le monde?
-
-    /* Matrix for storing densities calculation. */
-    class DensityMatrix {
-    public:
-        DensityMatrix();
-
-        DensityMatrix(const DensityMatrix &dm);
-
-        DensityMatrix(int nbVar, int largestDomainSize, int minValue);
-
-    public:
-        void clearMatrix();
-
-        double get(int variablePos, int value) const;
-
-        void set(int variablePos, int value, double density);
-
-    private:
-        double **densities;
-        int nbVar;
-        int largestDomainSize;
-        int minValue;
-    };
-
 private:
     static MincFactors mincFactors;
     static LiangBaiFactors liangBaiFactors;
-    static DensityMatrix densityMatrix;
 };
 
 #endif //CBS_ALLDIFFCBS_H
