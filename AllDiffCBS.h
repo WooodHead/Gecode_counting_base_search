@@ -63,6 +63,8 @@ private:
         int largestDomainSize;
     };
 
+    // TODO: Est-ce que je laisse la matrice de densité partagé par tout le monde?
+
     /* Matrix for storing densities calculation. */
     class DensityMatrix {
     public:

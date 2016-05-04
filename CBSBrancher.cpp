@@ -57,13 +57,22 @@ bool CBSBrancher::status(const Space &home) const {
 }
 
 const Choice *CBSBrancher::choice(Space &home) {
+    assert(status(home));
     int cIdx = 0;
+    // We search for a constraint whose variables are not all assigned
+    while (_constraints[cIdx]->allAssigned()) {
+        cIdx++;
+        assert(cIdx < _constraints.size());
+    }
+
     CBSPosValDensity c = _constraints[cIdx]->getDensity(_densityComparator);
-    for (int i=1; i< _constraints.size(); i++) {
-        auto posValDensity = _constraints[i]->getDensity(_densityComparator);
-        if (_densityComparator(posValDensity.density, c.density)) {
-            cIdx = i;
-            c = posValDensity;
+    for (int i=cIdx+1; i< _constraints.size(); i++) {
+        if (!_constraints[i]->allAssigned()) {
+            auto posValDensity = _constraints[i]->getDensity(_densityComparator);
+            if (_densityComparator(posValDensity.density, c.density)) {
+                cIdx = i;
+                c = posValDensity;
+            }
         }
     }
     return new CBSPosValChoice<int>(*this, 2, c.pos, c.val, cIdx);

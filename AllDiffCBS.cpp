@@ -25,6 +25,8 @@ CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
 }
 
 CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) {
+    assert(!_x.assigned());
+
     // Minc and Brégman and Liang and Bai upper bound.
     struct UB { double minc; double liangBai; };
     int idx = 0;
@@ -43,7 +45,8 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
         _ub.liangBai *= liangBaiFactors.get(index, newDomSize) / liangBaiFactors.get(index, oldDomSize);
     };
 
-    struct { int pos; int val; double density; } next_assignment{0, 0, -1};
+    struct { int pos; int val; double density; } next_assignment;
+    bool first_assignment = true;
     for (int i = 0; i < _x.size(); i++) {
         if (_x[i].assigned()) {
             densityMatrix.set(i, _x[i].val(), 1); // We have 100% chance taking the variable assigned value.
@@ -69,8 +72,9 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 auto d = densityMatrix.get(i, val.val()) / normalisationCte;
                 densityMatrix.set(i, val.val(), d);
                 // We keep track of the pair (var,val) that we want to return
-                if (comparator(d, next_assignment.density)) {
+                if (comparator(d, next_assignment.density) || first_assignment) {
                     next_assignment = {i, val.val(), d};
+                    first_assignment = false;
                 }
             }
         }

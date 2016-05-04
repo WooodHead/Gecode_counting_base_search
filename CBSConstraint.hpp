@@ -55,10 +55,7 @@ public:
     }
 
     bool allAssigned() const {
-        for (int i=0; i<_x.size(); i++)
-            if (!_x[i].assigned())
-                return false;
-        return true;
+        return _x.assigned();
     }
 
     // Return the minimum domain value of all the variables in the constraint
