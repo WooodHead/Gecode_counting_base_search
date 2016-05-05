@@ -6,7 +6,9 @@ find_package(Gecode REQUIRED)
 include_directories(${Gecode_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/build/Release)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/build/Debug)
 
 # Sources files
 set(SOURCE_FILES CBSBrancher.cpp AllDiffCBS.cpp CBSPosValChoice.hpp CBSConstraint.hpp)
