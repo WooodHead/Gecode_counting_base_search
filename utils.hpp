@@ -19,37 +19,29 @@
  *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
-#ifndef CBS_CBSPOSVALCHOICE_H
-#define CBS_CBSPOSVALCHOICE_H
+#ifndef GECODE_COUTING_BASE_SEARCH_UTILS_H
+#define GECODE_COUTING_BASE_SEARCH_UTILS_H
 
-#include <gecode/int.hh>
-#include <gecode/minimodel.hh>
-#include <gecode/search.hh>
+#include <algorithm>
 
-using namespace Gecode;
+// TODO: Remplacer ça... Il doit avoir une manière de faire ça dans Gecode sans ces fonctions.
 
-// TODO: A quoi ca sert GECODE_VTABLE_EXPORT
-template<class Val>
-class GECODE_VTABLE_EXPORT CBSPosValChoice : public PosValChoice<Val> {
-private:
-    const int _arrayIdx;
-public:
-    CBSPosValChoice(const Brancher& b, unsigned int a, const Pos& p, const Val& n, int arrayIdx)
-        : PosValChoice<Val>(b,a,p,n), _arrayIdx(arrayIdx) {}
+// Return the maximum domain value of all the variables in T
+template<class T>
+int minDomVal(const T &x) {
+    auto v = std::min_element(x.begin(), x.end(), [](auto a, auto b) {
+        return a.min() < b.min();
+    });
+    return v->min();
+}
 
-    int arrayIdx(void) const {
-        return _arrayIdx;
-    }
+// Return the minimum domain value of all the variables in T
+template<class T>
+int maxDomVal(const T &x) {
+    auto v = std::max_element(x.begin(), x.end(), [](auto a, auto b) {
+        return a.max() < b.max();
+    });
+    return v->max();
+}
 
-    virtual size_t size(void) const {
-        return sizeof(CBSPosValChoice<Val>);
-    }
-
-    virtual void archive(Archive& e) const {
-        PosValChoice<Val>::archive(e);
-        e << _arrayIdx;
-    }
-
-};
-
-#endif //CBS_CBSPOSVALCHOICE_H
+#endif //GECODE_COUTING_BASE_SEARCH_UTILS_H

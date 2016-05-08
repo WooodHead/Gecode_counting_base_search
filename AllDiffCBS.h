@@ -1,7 +1,4 @@
-/**
- *  Main author:
- *      Samuel Gagnon
- *
+/*
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software and associated documentation files (the
  *  "Software"), to deal in the Software without restriction, including
@@ -26,7 +23,10 @@
 #define CBS_ALLDIFFCBS_H
 
 #include <complex>
+
 #include "CBSConstraint.hpp"
+#include "ValToVar.h"
+
 
 /**
  * All different couting base search constraint.
@@ -35,7 +35,7 @@
  * Problems" by Gilles Pesant, Claude-Guy Quimper and Alessandro Zanarini. It uses two precomputed data structures
  * for calculating densities upper bounds (Minc and Brégman and Liang and Bai).
  */
-class AllDiffCBS : public CBSConstraint/*<View, Val>*/ {
+class AllDiffCBS : public CBSConstraint {
 public:
     AllDiffCBS(Space &home, const IntVarArgs &x);
 
@@ -63,7 +63,7 @@ private:
         double get(int domSize);
 
     private:
-        // Recursive function for precomputing mincFactors from 1..n
+        // Recursive function for precomputing _mincFactors from 1..n
         double precomputeMincFactors(int n);
 
     private:
@@ -95,8 +95,9 @@ private:
     };
 
 private:
-    static MincFactors mincFactors;
-    static LiangBaiFactors liangBaiFactors;
+    ValToVarHandle _valToVarH;
+    static MincFactors _mincFactors;
+    static LiangBaiFactors _liangBaiFactors;
 };
 
 #endif //CBS_ALLDIFFCBS_H

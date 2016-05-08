@@ -11,7 +11,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/build/Rel
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/build/Debug)
 
 # Sources files
-set(SOURCE_FILES CBSBrancher.cpp AllDiffCBS.cpp CBSPosValChoice.hpp CBSConstraint.hpp)
+set(SOURCE_FILES CBSBrancher.cpp AllDiffCBS.cpp CBSPosValChoice.hpp CBSConstraint.hpp ValToVar.cpp utils.hpp)
 
 # Problems
 set(DUMMY_PROBLEM problems/DummyProblem.cpp ${SOURCE_FILES})

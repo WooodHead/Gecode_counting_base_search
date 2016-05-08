@@ -107,8 +107,8 @@ public:
             distinct(*this, m.row(i), opt.icl());
             distinct(*this, m.col(i), opt.icl());
 
-            constraints.push_back(new AllDiffCBS(*this, m.row(i)));
-            constraints.push_back(new AllDiffCBS(*this, m.col(i)));
+            constraints.push_back( new AllDiffCBS(*this, m.row(i)));
+            constraints.push_back( new AllDiffCBS(*this, m.col(i)));
         }
 
         // Constraints for squares
@@ -116,7 +116,7 @@ public:
             for (int j=0; j<nn; j+=n) {
                 distinct(*this, m.slice(i, i+n, j, j+n), opt.icl());
 
-                constraints.push_back(new AllDiffCBS(*this, m.slice(i, i+n, j, j+n)));
+                constraints.push_back(new AllDiffCBS(*this, m.slice(i, i + n, j, j + n)));
             }
         }
 

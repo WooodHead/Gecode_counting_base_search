@@ -1,7 +1,4 @@
-/**
- *  Main author:
- *      Samuel Gagnon
- *
+/*
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software and associated documentation files (the
  *  "Software"), to deal in the Software without restriction, including
@@ -28,6 +25,8 @@
 #include <gecode/int.hh>
 #include <gecode/minimodel.hh>
 #include <gecode/search.hh>
+
+#include "utils.hpp"
 
 #include <functional>
 
@@ -85,18 +84,12 @@ public:
 
     // Return the minimum domain value of all the variables in the constraint
     int minDomValue() const {
-        auto v = std::min_element(_x.begin(), _x.end(), [](auto a, auto b) {
-            return a.min() < b.min();
-        });
-        return v->min();
+        return minDomVal(_x);
     }
 
     // Return the maximum domain value of all the variables in the constraint
     int maxDomValue() const {
-        auto v = std::max_element(_x.begin(), _x.end(), [](auto a, auto b) {
-            return a.max() < b.max();
-        });
-        return v->max();
+        return maxDomVal(_x);
     }
 };
 

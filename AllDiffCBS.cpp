@@ -1,7 +1,4 @@
-/**
- *  Main author:
- *      Samuel Gagnon
- *
+/*
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software and associated documentation files (the
  *  "Software"), to deal in the Software without restriction, including
@@ -29,14 +26,19 @@
  **********************************************************************************************************************/
 
 // Static variables declaration
-AllDiffCBS::MincFactors AllDiffCBS::mincFactors;
-AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
+AllDiffCBS::MincFactors AllDiffCBS::_mincFactors;
+AllDiffCBS::LiangBaiFactors AllDiffCBS::_liangBaiFactors;
 
 AllDiffCBS::AllDiffCBS(Space &home, const IntVarArgs &x)
-        : CBSConstraint(home, x) { }
+        : CBSConstraint(home, x), _valToVarH(home, x) {
+    ViewArray<Int::IntView> y(home, x);
+    ValToVarPropagator::post(home, y, _valToVarH);
+}
 
 AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS &c)
-        : CBSConstraint(home, share, c) { }
+        : CBSConstraint(home, share, c), _valToVarH(c._valToVarH) {
+    _valToVarH.update(home, share, c._valToVarH);
+}
 
 CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
     return new AllDiffCBS(home, share, *this);
@@ -49,14 +51,14 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
     struct UB { double minc; double liangBai; };
     int idx = 0;
     UB ub = std::accumulate(_x.begin(), _x.end(), UB{1, 1}, [&](UB acc, auto elem) {
-        return UB{acc.minc * mincFactors.get(elem.size()),
-                  acc.liangBai * liangBaiFactors.get(idx++, elem.size())};
+        return UB{acc.minc * _mincFactors.get(elem.size()),
+                  acc.liangBai * _liangBaiFactors.get(idx++, elem.size())};
     });
 
     // Function for updating both upper bounds when a domain change.
     auto upperBoundUpdate = [&](UB &_ub, int index, int oldDomSize, int newDomSize) {
-        _ub.minc *= mincFactors.get(newDomSize) / mincFactors.get(oldDomSize);
-        _ub.liangBai *= liangBaiFactors.get(index, newDomSize) / liangBaiFactors.get(index, oldDomSize);
+        _ub.minc *= _mincFactors.get(newDomSize) / _mincFactors.get(oldDomSize);
+        _ub.liangBai *= _liangBaiFactors.get(index, newDomSize) / _liangBaiFactors.get(index, oldDomSize);
     };
 
     // Vector that span the domain of every variables for keeping densities. There's no need to set the vector to zero
@@ -76,11 +78,16 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
-                for (int j = 0; j < _x.size(); j++) {
-                    if (_x[j].in(val.val()) && j != i) {
-                        upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
+                for (auto var : *_valToVarH.get(val.val())) {
+                    if (var != i) {
+                        upperBoundUpdate(localUB, var, _x[var].size(), _x[var].size() - 1);
                     }
                 }
+//                for (int j = 0; j < _x.size(); j++) {
+//                    if (_x[j].in(val.val()) && j != i) {
+//                        upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
+//                    }
+//                }
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
                 *density = lowerUB;
                 normalization += lowerUB;
@@ -103,8 +110,8 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
 }
 
 void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
-    mincFactors = MincFactors(largestDomainSize);
-    liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
+    _mincFactors = MincFactors(largestDomainSize);
+    _liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
 }
 
 
@@ -112,7 +119,7 @@ void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
  * MincFactors
  **********************************************************************************************************************/
 
-AllDiffCBS::MincFactors::MincFactors() { }
+AllDiffCBS::MincFactors::MincFactors() {}
 
 AllDiffCBS::MincFactors::MincFactors(int largestDomainSize)
         : largestDomainSize(largestDomainSize) {
@@ -144,7 +151,7 @@ double AllDiffCBS::MincFactors::precomputeMincFactors(int n) {
  * LiangBaiFactors
  **********************************************************************************************************************/
 
-AllDiffCBS::LiangBaiFactors::LiangBaiFactors() { }
+AllDiffCBS::LiangBaiFactors::LiangBaiFactors() {}
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(int nbVar, int largestDomainSize)
         : nbVar(nbVar), largestDomainSize(largestDomainSize) {
