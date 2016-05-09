@@ -1,7 +1,4 @@
-/**
- *  Main author:
- *      Samuel Gagnon
- *
+/*
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software and associated documentation files (the
  *  "Software"), to deal in the Software without restriction, including
@@ -23,6 +20,8 @@
  *
  */
 #include "AllDiffCBS.h"
+
+#include <set>
 
 /***********************************************************************************************************************
  * AllDiffCBS
@@ -64,6 +63,15 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
     std::vector<double> densities((unsigned long)_x.size());
     auto minDomVal = minDomValue(); // TODO: Regarder si il n'y aurait pas une meilleur façon de faire ça
 
+    // In the main loop, for a given value, we need to know which variable can be assigned to the value. The goal of
+    // valToVar is to speed up this operation.
+    std::vector<std::set<int>> valToVar((unsigned long)(maxDomValue() - minDomVal + 1));
+    for (int var=0; var<_x.size(); var++) {
+        for (Gecode::IntVarValues val((IntVar)_x[var]); val(); ++val) {
+            valToVar[val.val()-minDomVal].insert(var);
+        }
+    }
+
     struct { int pos; int val; double density; } choice;
     bool first_choice = true;
     for (int i = 0; i < _x.size(); i++) {
@@ -76,9 +84,9 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
-                for (int j = 0; j < _x.size(); j++) {
-                    if (_x[j].in(val.val()) && j != i) {
-                        upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
+                for (auto &var : valToVar[val.val() - minDomVal]) {
+                    if (var != i) {
+                        upperBoundUpdate(localUB, var, _x[var].size(), _x[var].size() - 1);
                     }
                 }
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
@@ -112,7 +120,7 @@ void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
  * MincFactors
  **********************************************************************************************************************/
 
-AllDiffCBS::MincFactors::MincFactors() { }
+AllDiffCBS::MincFactors::MincFactors() {}
 
 AllDiffCBS::MincFactors::MincFactors(int largestDomainSize)
         : largestDomainSize(largestDomainSize) {
@@ -121,7 +129,7 @@ AllDiffCBS::MincFactors::MincFactors(int largestDomainSize)
 }
 
 AllDiffCBS::MincFactors::MincFactors(const MincFactors &mf)
-        : largestDomainSize(mf.largestDomainSize), mincFactors(mf.mincFactors) { }
+        : largestDomainSize(mf.largestDomainSize), mincFactors(mf.mincFactors) {}
 
 double AllDiffCBS::MincFactors::get(int domSize) {
     assert(domSize <= largestDomainSize);
@@ -144,7 +152,7 @@ double AllDiffCBS::MincFactors::precomputeMincFactors(int n) {
  * LiangBaiFactors
  **********************************************************************************************************************/
 
-AllDiffCBS::LiangBaiFactors::LiangBaiFactors() { }
+AllDiffCBS::LiangBaiFactors::LiangBaiFactors() {}
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(int nbVar, int largestDomainSize)
         : nbVar(nbVar), largestDomainSize(largestDomainSize) {
@@ -156,7 +164,7 @@ AllDiffCBS::LiangBaiFactors::LiangBaiFactors(int nbVar, int largestDomainSize)
 }
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(const LiangBaiFactors &lb)
-        : nbVar(lb.nbVar), largestDomainSize(lb.largestDomainSize), liangBaiFactors(lb.liangBaiFactors) { }
+        : nbVar(lb.nbVar), largestDomainSize(lb.largestDomainSize), liangBaiFactors(lb.liangBaiFactors) {}
 
 double AllDiffCBS::LiangBaiFactors::get(int index, int domSize) {
     assert(index < nbVar);

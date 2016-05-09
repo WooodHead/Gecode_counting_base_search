@@ -1,7 +1,4 @@
-/**
- *  Main author:
- *      Samuel Gagnon
- *
+/*
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software and associated documentation files (the
  *  "Software"), to deal in the Software without restriction, including
@@ -61,7 +58,7 @@ public:
 
     virtual CBSPosValDensity getDensity(std::function<bool(double,double)> comparator) const = 0;
 
-    virtual void precomputeDataStruct(int nbVar, int largestDomainSize) { }
+    virtual void precomputeDataStruct(int nbVar, int largestDomainSize) {}
 
     ExecStatus commit(Space &home, const Choice &c, unsigned int a) {
         const PosValChoice<int> &pvi = static_cast<const PosValChoice<int> &>(c);
