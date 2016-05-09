@@ -78,16 +78,40 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
+
+
+
+                std::vector<int> v1;
                 for (auto var : *_valToVarH.get(val.val())) {
                     if (var != i) {
-                        upperBoundUpdate(localUB, var, _x[var].size(), _x[var].size() - 1);
+                        v1.push_back(var);
+//                        upperBoundUpdate(localUB, var, _x[var].size(), _x[var].size() - 1);
                     }
                 }
-//                for (int j = 0; j < _x.size(); j++) {
-//                    if (_x[j].in(val.val()) && j != i) {
-//                        upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
-//                    }
-//                }
+
+
+
+                std::vector<int> v2;
+                for (int j = 0; j < _x.size(); j++) {
+                    if (_x[j].in(val.val()) && j != i) {
+                        v2.push_back(j);
+                        upperBoundUpdate(localUB, j, _x[j].size(), _x[j].size() - 1);
+                    }
+                }
+
+                if (v1.size() != v2.size()) {
+//                    std::cout << "ERREUR SIZE" << std::endl;
+                }
+                std::sort(v1.begin(), v1.end());
+                std::sort(v2.begin(), v2.end());
+                for (int i=0; i<v1.size(); i++) {
+                    if (v1[i] != v2[i]) {
+//                        std::cout << "ERREUR EGAL" << std::endl;
+                    }
+                }
+
+
+
                 auto lowerUB = std::min(localUB.minc, sqrt(localUB.liangBai));
                 *density = lowerUB;
                 normalization += lowerUB;

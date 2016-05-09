@@ -61,10 +61,12 @@ public:
     ValToVarHandle(const ValToVarHandle & li);
 
     ValToVarHandle & operator =(const ValToVarHandle & li);
-
+    /// Get the possible variables for a value
     stdSet *get(int val) const;
-
+    /// Remove a variable from a value
     void remove(int val, int var);
+    /// Assign a value to a variable
+    void assignVar(int val, int var);
 };
 
 /**
@@ -100,7 +102,7 @@ protected:
     ValToVarPropagator(Space& home, bool share, ValToVarPropagator & p);
 public:
     /// Constructor for creation
-    ValToVarPropagator(Home home, ViewArray<Int::IntView>& x, ValToVarHandle sharedInt);
+    ValToVarPropagator(Home home, ViewArray<Int::IntView>& x, ValToVarHandle vtvH);
     /// Copy propagator during cloning
     virtual Propagator* copy(Space& home, bool share);
     /// Cost function (crazy so that propagator is likely to run last)

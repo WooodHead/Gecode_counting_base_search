@@ -37,6 +37,7 @@ ValToVarHandle::ValToVar::ValToVar(Space &home, const IntVarArgs &x)
 
     for (int i=0; i<x.size(); ++i) {
         for (int j=x[i].min(); j<=x[i].max(); j++) {
+            assert (x[i].in(j));
             int val = j - _min;
             _data[val].insert(i);
         }
@@ -88,6 +89,17 @@ void ValToVarHandle::remove(int val, int var) {
     lio->_data[val - offset].erase(var);
 }
 
+void ValToVarHandle::assignVar(int val, int var) {
+    ValToVar *lio = static_cast<ValToVar *>(object());
+    int valIdx = val - lio->_min;
+    // For each value, the variable is no longer valid (except for the assignation (var,val) itself)
+    for (int i=0; i<lio->_data.size(); i++) {
+        if (i != valIdx) {
+            lio->_data[i].erase(var);
+        }
+    }
+}
+
 
 /***********************************************************************************************************************
  * ValToVarPropagator::ValToVarAdvisor
@@ -126,8 +138,8 @@ ValToVarPropagator::ValToVarPropagator(Space& home, bool share, ValToVarPropagat
     _valToVarH.update(home, share, p._valToVarH);
 }
 
-ValToVarPropagator::ValToVarPropagator(Home home, ViewArray<Int::IntView>& x, ValToVarHandle sharedInt)
-        : NaryPropagator<Int::IntView,PC_GEN_NONE>(home,x), c(home), _valToVarH(sharedInt) {
+ValToVarPropagator::ValToVarPropagator(Home home, ViewArray<Int::IntView>& x, ValToVarHandle vtvH)
+        : NaryPropagator<Int::IntView,PC_GEN_NONE>(home,x), c(home), _valToVarH(vtvH) {
     home.notice(*this,AP_DISPOSE);
     for (int i=x.size(); i--; )
         if (!x[i].assigned())
@@ -146,12 +158,23 @@ ExecStatus ValToVarPropagator::advise(Space& home, Advisor& a, const Delta& d) {
     ValToVarAdvisor & ad = static_cast<ValToVarAdvisor &>(a);
     ad.mark();
     int varIdx = ad.idx();
-    if (!x[varIdx].any(d)) {
+
+    int modevent = x[varIdx].modevent(d);
+
+    // If the modification event is an assignation
+    if ( x[varIdx].modevent(d) == ME_GEN_ASSIGNED) {
+        int val = x[varIdx].val();
+        _valToVarH.assignVar(val, varIdx);
+    // Else if the modification event is a domain change
+    } else if (!x[varIdx].any(d)) {
         int min = x[varIdx].min(d);
         int max = x[varIdx].max(d);
+        // Each value from min to max will no longer contain this variable
         for (int val=min; val<=max; val++) {
             _valToVarH.remove(val, varIdx);
         }
+    } else {
+       POUR CHAQUE VAL, REGARDER SI VAL CONTIENT VAR. SI CEST LE CAS, REGARDER SI VAR CONTIENT ENCORE VAL.
     }
     return ES_NOFIX;
 }
