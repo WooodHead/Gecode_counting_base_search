@@ -132,8 +132,15 @@ AllDiffCBS::MincFactors::MincFactors() {}
 
 AllDiffCBS::MincFactors::MincFactors(int largestDomainSize)
         : largestDomainSize(largestDomainSize) {
+    assert(!computed);
     mincFactors = heap.alloc<double>(largestDomainSize);
     precomputeMincFactors(largestDomainSize);
+}
+
+AllDiffCBS::MincFactors::~MincFactors() {
+    if (computed) {
+        heap.free(mincFactors, largestDomainSize);
+    }
 }
 
 AllDiffCBS::MincFactors::MincFactors(const MincFactors &mf)
@@ -162,14 +169,26 @@ double AllDiffCBS::MincFactors::precomputeMincFactors(int n) {
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors() {}
 
+
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(int nbVar, int largestDomainSize)
         : nbVar(nbVar), largestDomainSize(largestDomainSize) {
+    assert(!computed);
     liangBaiFactors = heap.alloc<double *>(nbVar);
     for (int i = 0; i < nbVar; i++)
         liangBaiFactors[i] = heap.alloc<double>(largestDomainSize);
 
     precomputeLiangBaiFactors();
 }
+
+AllDiffCBS::LiangBaiFactors::~LiangBaiFactors() {
+    if (computed) {
+        for (int i = 0; i < nbVar; i++) {
+            heap.free(liangBaiFactors[i], largestDomainSize);
+        }
+        heap.free(liangBaiFactors, nbVar);
+    }
+}
+
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(const LiangBaiFactors &lb)
         : nbVar(lb.nbVar), largestDomainSize(lb.largestDomainSize), liangBaiFactors(lb.liangBaiFactors) {}
@@ -190,3 +209,5 @@ void AllDiffCBS::LiangBaiFactors::precomputeLiangBaiFactors() {
         }
     }
 }
+
+

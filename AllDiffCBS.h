@@ -55,6 +55,8 @@ private:
 
         MincFactors(int largestDomainSize);
 
+        ~MincFactors();
+
         MincFactors(const MincFactors &mf);
 
         double get(int domSize);
@@ -77,6 +79,8 @@ private:
         LiangBaiFactors();
 
         LiangBaiFactors(int nbVar, int largestDomainSize);
+
+        ~LiangBaiFactors();
 
         LiangBaiFactors(const LiangBaiFactors &lb);
 
