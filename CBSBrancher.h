@@ -41,11 +41,14 @@ using namespace Gecode;
  */
 class CBSBrancher : public Gecode::Brancher {
 public:
-    CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
-                std::function<bool(double,double)> densityComparator);
+    enum Strategy {
+        MIN_BRANCHING,
+        MAX_BRANCHING
+    };
+public:
+    CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints, Strategy strategy);
 
-    static void post(Space &home, std::vector<CBSConstraint*> &constraints,
-                     std::function<bool(double,double)> densityComparator);
+    static void post(Space &home, std::vector<CBSConstraint*> &constraints, Strategy strategy);
 
     CBSBrancher(Space &home, bool share, CBSBrancher &b);
 
@@ -63,13 +66,14 @@ public:
 
 private:
     // Every counting base search constraints
-    std::vector<CBSConstraint*> _constraints;
+    using CBSConstraintVector = std::vector<CBSConstraint*, space_allocator<CBSConstraint*>>;
+    CBSConstraintVector _constraints;
     // Density selection strategy for branching
-    std::function<bool(double,double)> _densityComparator;
+    Strategy _strategy;
 };
 
 void cbsbranch(Space &home, std::vector<CBSConstraint*> &constraints,
-               std::function<bool(double, double)> densityComparator);
+               CBSBrancher::Strategy strategy);
 
 
 #endif //CBS_ALLDIFFCBSBRANCHER_H

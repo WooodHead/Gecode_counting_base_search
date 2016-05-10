@@ -36,9 +36,9 @@ class AllDiffCBS : public CBSConstraint/*<View, Val>*/ {
 public:
     AllDiffCBS(Space &home, const IntVarArgs &x);
 
-    AllDiffCBS(Space &home, bool share, AllDiffCBS &c);
+    AllDiffCBS(Space &home, bool share, AllDiffCBS *c);
 
-    CBSConstraint *copy(Space &home, bool share, CBSConstraint &c) override;
+    CBSConstraint *copy(Space &home, bool share, CBSConstraint *c) override;
 
     CBSPosValDensity getDensity(std::function<bool(double,double)> comparator) const override;
 
@@ -54,6 +54,8 @@ private:
         MincFactors();
 
         MincFactors(int largestDomainSize);
+
+        ~MincFactors();
 
         MincFactors(const MincFactors &mf);
 
@@ -78,6 +80,8 @@ private:
 
         LiangBaiFactors(int nbVar, int largestDomainSize);
 
+        ~LiangBaiFactors();
+
         LiangBaiFactors(const LiangBaiFactors &lb);
 
         double get(int index, int domSize);
@@ -92,6 +96,7 @@ private:
     };
 
 private:
+    static bool computed;
     static MincFactors mincFactors;
     static LiangBaiFactors liangBaiFactors;
 };

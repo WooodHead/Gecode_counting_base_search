@@ -28,17 +28,22 @@
  **********************************************************************************************************************/
 
 // Static variables declaration
+bool AllDiffCBS::computed = false;
 AllDiffCBS::MincFactors AllDiffCBS::mincFactors;
 AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
 
 AllDiffCBS::AllDiffCBS(Space &home, const IntVarArgs &x)
-        : CBSConstraint(home, x) { }
+        : CBSConstraint(home, x) {}
 
-AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS &c)
-        : CBSConstraint(home, share, c) { }
+AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS *c)
+        : CBSConstraint(home, share, c) {}
 
-CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
-    return new AllDiffCBS(home, share, *this);
+CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint *c) {
+    // TODO : Changer ça ici aussi...
+    AllDiffCBS tmp(home, share, static_cast<AllDiffCBS*>(c));
+    auto ret = reinterpret_cast<AllDiffCBS*>(home.alloc<char>(sizeof(AllDiffCBS)));
+    memcpy(ret, &tmp, sizeof(AllDiffCBS));
+    return ret;
 }
 
 CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) const {
@@ -99,7 +104,7 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 double *density = &densities[val.val() - minDomVal];
                 *density /= normalization;
                 // Is this new density a better choice than our current one?
-                if (comparator(*density, choice.density) || first_choice) {
+                if (first_choice || comparator(*density, choice.density)) {
                     choice = {i, val.val(), *density};
                     first_choice = false;
                 }
@@ -111,8 +116,11 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
 }
 
 void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
-    mincFactors = MincFactors(largestDomainSize);
-    liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
+    if (!computed) {
+        mincFactors = MincFactors(largestDomainSize);
+        liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
+        computed = true;
+    }
 }
 
 
@@ -124,8 +132,15 @@ AllDiffCBS::MincFactors::MincFactors() {}
 
 AllDiffCBS::MincFactors::MincFactors(int largestDomainSize)
         : largestDomainSize(largestDomainSize) {
+    assert(!computed);
     mincFactors = heap.alloc<double>(largestDomainSize);
     precomputeMincFactors(largestDomainSize);
+}
+
+AllDiffCBS::MincFactors::~MincFactors() {
+    if (computed) {
+        heap.free(mincFactors, largestDomainSize);
+    }
 }
 
 AllDiffCBS::MincFactors::MincFactors(const MincFactors &mf)
@@ -154,14 +169,26 @@ double AllDiffCBS::MincFactors::precomputeMincFactors(int n) {
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors() {}
 
+
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(int nbVar, int largestDomainSize)
         : nbVar(nbVar), largestDomainSize(largestDomainSize) {
+    assert(!computed);
     liangBaiFactors = heap.alloc<double *>(nbVar);
     for (int i = 0; i < nbVar; i++)
         liangBaiFactors[i] = heap.alloc<double>(largestDomainSize);
 
     precomputeLiangBaiFactors();
 }
+
+AllDiffCBS::LiangBaiFactors::~LiangBaiFactors() {
+    if (computed) {
+        for (int i = 0; i < nbVar; i++) {
+            heap.free(liangBaiFactors[i], largestDomainSize);
+        }
+        heap.free(liangBaiFactors, nbVar);
+    }
+}
+
 
 AllDiffCBS::LiangBaiFactors::LiangBaiFactors(const LiangBaiFactors &lb)
         : nbVar(lb.nbVar), largestDomainSize(lb.largestDomainSize), liangBaiFactors(lb.liangBaiFactors) {}
@@ -182,3 +209,5 @@ void AllDiffCBS::LiangBaiFactors::precomputeLiangBaiFactors() {
         }
     }
 }
+
+
