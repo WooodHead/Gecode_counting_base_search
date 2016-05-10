@@ -31,7 +31,8 @@
 
 CBSBrancher::CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
                          std::function<bool(double,double)> densityComparator)
-        : _constraints(constraints), _densityComparator(densityComparator), Brancher(home) {
+        : _constraints(constraints.begin(), constraints.end(), CBSConstraintVector::allocator_type(home)),
+          _densityComparator(densityComparator), Brancher(home) {
     /**
      * Some constraints share precomputed data structures. For this reason, each constraint must gives information about
      * the domain of its variables so the precomputed data structures are usable for all constraints.
@@ -58,7 +59,8 @@ void CBSBrancher::post(Space &home, std::vector<CBSConstraint*> &constraints,
 }
 
 CBSBrancher::CBSBrancher(Space &home, bool share, CBSBrancher &b)
-        : _densityComparator(b._densityComparator), Brancher(home, share, b) {
+        : _constraints(CBSConstraintVector::allocator_type(home)),
+          _densityComparator(b._densityComparator), Brancher(home, share, b) {
     // We copy all constraints
     _constraints.reserve(b._constraints.size());
     for (auto& c : b._constraints)

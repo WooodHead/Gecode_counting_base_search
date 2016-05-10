@@ -92,6 +92,7 @@ private:
     };
 
 private:
+    static bool computed;
     static MincFactors mincFactors;
     static LiangBaiFactors liangBaiFactors;
 };

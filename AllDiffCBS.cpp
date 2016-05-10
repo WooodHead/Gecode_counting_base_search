@@ -28,6 +28,7 @@
  **********************************************************************************************************************/
 
 // Static variables declaration
+bool AllDiffCBS::computed = false;
 AllDiffCBS::MincFactors AllDiffCBS::mincFactors;
 AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
 
@@ -115,8 +116,11 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
 }
 
 void AllDiffCBS::precomputeDataStruct(int nbVar, int largestDomainSize) {
-    mincFactors = MincFactors(largestDomainSize);
-    liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
+    if (!computed) {
+        mincFactors = MincFactors(largestDomainSize);
+        liangBaiFactors = LiangBaiFactors(nbVar, largestDomainSize);
+        computed = true;
+    }
 }
 
 

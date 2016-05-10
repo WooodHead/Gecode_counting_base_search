@@ -63,7 +63,8 @@ public:
 
 private:
     // Every counting base search constraints
-    std::vector<CBSConstraint*> _constraints;
+    using CBSConstraintVector = std::vector<CBSConstraint*, space_allocator<CBSConstraint*>>;
+    CBSConstraintVector _constraints;
     // Density selection strategy for branching
     std::function<bool(double,double)> _densityComparator;
 };
