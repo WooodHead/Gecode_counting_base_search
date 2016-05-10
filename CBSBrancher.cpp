@@ -29,10 +29,9 @@
  * CBSBrancher
  **********************************************************************************************************************/
 
-CBSBrancher::CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
-                         std::function<bool(double,double)> densityComparator)
+CBSBrancher::CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints, Strategy strategy)
         : _constraints(constraints.begin(), constraints.end(), CBSConstraintVector::allocator_type(home)),
-          _densityComparator(densityComparator), Brancher(home) {
+          _strategy(strategy), Brancher(home) {
     /**
      * Some constraints share precomputed data structures. For this reason, each constraint must gives information about
      * the domain of its variables so the precomputed data structures are usable for all constraints.
@@ -53,14 +52,14 @@ CBSBrancher::CBSBrancher(Space &home, std::vector<CBSConstraint*> &constraints,
         c->precomputeDataStruct(highestNumberOfVars, largestDomainSize);
 }
 
-void CBSBrancher::post(Space &home, std::vector<CBSConstraint*> &constraints,
-                       std::function<bool(double,double)> densityComparator) {
-    (void) new(home) CBSBrancher(home, constraints, densityComparator);
+void CBSBrancher::post(Space &home, std::vector<CBSConstraint*> &constraints, Strategy strategy) {
+//                       std::function<bool(double,double)> densityComparator) {
+    (void) new(home) CBSBrancher(home, constraints, strategy);
 }
 
 CBSBrancher::CBSBrancher(Space &home, bool share, CBSBrancher &b)
         : _constraints(CBSConstraintVector::allocator_type(home)),
-          _densityComparator(b._densityComparator), Brancher(home, share, b) {
+            _strategy(b._strategy), Brancher(home, share, b) {
     // We copy all constraints
     _constraints.reserve(b._constraints.size());
     for (auto& c : b._constraints)
@@ -81,6 +80,22 @@ bool CBSBrancher::status(const Space &home) const {
 
 const Choice *CBSBrancher::choice(Space &home) {
     assert(status(home));
+
+    // TODO: TEMPORAIRE, trouver une meilleur facon de faire les choses ici.. Le problème c'est que je ne sais pas
+    // TODO: comment utiliser un allocateur pour un objet de type std::function<bool(double,double)>... Alors je ne suis pas
+    // TODO: capable de garder la fonction en référence dans ma classe sans avoir un leak..
+    std::function<bool(double,double)> densityComparator;
+    switch (_strategy) {
+        case MIN_BRANCHING:
+            densityComparator = std::less<double>();
+            break;
+        case MAX_BRANCHING:
+            densityComparator = std::greater<double>();
+            break;
+        default:
+            assert(false);
+    }
+
     int cIdx = 0;
     // We search for a constraint whose variables are not all assigned
     while (_constraints[cIdx]->allAssigned()) {
@@ -89,14 +104,14 @@ const Choice *CBSBrancher::choice(Space &home) {
     }
 
     // Choice for the first constraint found
-    auto choice = _constraints[cIdx]->getDensity(_densityComparator);
+    auto choice = _constraints[cIdx]->getDensity(densityComparator);
 
     // We will check if there's a better choice in the other constraints
     for (int i=cIdx+1; i< _constraints.size(); i++) {
         if (!_constraints[i]->allAssigned()) {
-            auto posValDensity = _constraints[i]->getDensity(_densityComparator);
+            auto posValDensity = _constraints[i]->getDensity(densityComparator);
             // If this choice is better than the current one...
-            if (_densityComparator(posValDensity.density, choice.density)) {
+            if (densityComparator(posValDensity.density, choice.density)) {
                 cIdx = i;
                 choice = posValDensity;
             }
@@ -133,7 +148,7 @@ void CBSBrancher::print(const Space &home, const Choice &c, unsigned int a, std:
  **********************************************************************************************************************/
 
 void cbsbranch(Space &home, std::vector<CBSConstraint *> &constraints,
-               std::function<bool(double, double)> densityComparator) {
+               CBSBrancher::Strategy strategy) {
     if (home.failed()) return;
-    CBSBrancher::post(home, constraints, densityComparator);
+    CBSBrancher::post(home, constraints, strategy);
 }

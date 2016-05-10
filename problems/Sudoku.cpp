@@ -185,7 +185,7 @@ public:
         } else if (opt.branching() == BRANCH_AFC) {
             branch(*this, x, INT_VAR_AFC_MAX(opt.decay()), INT_VAL_SPLIT_MIN());
         } else if (opt.branching() == BRANCH_CBS) {
-            cbsbranch(*this, constraints, std::greater<double>());
+            cbsbranch(*this, constraints, CBSBrancher::Strategy::MAX_BRANCHING);
         }
     }
 
