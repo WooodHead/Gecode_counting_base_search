@@ -32,13 +32,17 @@ AllDiffCBS::MincFactors AllDiffCBS::mincFactors;
 AllDiffCBS::LiangBaiFactors AllDiffCBS::liangBaiFactors;
 
 AllDiffCBS::AllDiffCBS(Space &home, const IntVarArgs &x)
-        : CBSConstraint(home, x) { }
+        : CBSConstraint(home, x) {}
 
-AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS &c)
-        : CBSConstraint(home, share, c) { }
+AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS *c)
+        : CBSConstraint(home, share, c) {}
 
-CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint &c) {
-    return new AllDiffCBS(home, share, *this);
+CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint *c) {
+    // TODO : Changer ça ici aussi...
+    AllDiffCBS tmp(home, share, static_cast<AllDiffCBS*>(c));
+    auto ret = reinterpret_cast<AllDiffCBS*>(home.alloc<char>(sizeof(AllDiffCBS)));
+    memcpy(ret, &tmp, sizeof(AllDiffCBS));
+    return ret;
 }
 
 CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> comparator) const {
@@ -99,7 +103,7 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
                 double *density = &densities[val.val() - minDomVal];
                 *density /= normalization;
                 // Is this new density a better choice than our current one?
-                if (comparator(*density, choice.density) || first_choice) {
+                if (first_choice || comparator(*density, choice.density)) {
                     choice = {i, val.val(), *density};
                     first_choice = false;
                 }

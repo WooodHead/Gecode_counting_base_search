@@ -50,11 +50,11 @@ public:
         _x = y;
     }
 
-    CBSConstraint(Space &home, bool share, CBSConstraint &c) {
-        _x.update(home, share, c._x);
+    CBSConstraint(Space &home, bool share, CBSConstraint *c) {
+        _x.update(home, share, c->_x);
     }
 
-    virtual CBSConstraint* copy(Space &home, bool share, CBSConstraint &c) = 0;
+    virtual CBSConstraint* copy(Space &home, bool share, CBSConstraint *c) = 0;
 
     virtual CBSPosValDensity getDensity(std::function<bool(double,double)> comparator) const = 0;
 

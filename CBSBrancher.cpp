@@ -62,7 +62,7 @@ CBSBrancher::CBSBrancher(Space &home, bool share, CBSBrancher &b)
     // We copy all constraints
     _constraints.reserve(b._constraints.size());
     for (auto& c : b._constraints)
-        _constraints.push_back(c->copy(home, share, *c));
+        _constraints.push_back(c->copy(home, share, c));
 }
 
 Brancher *CBSBrancher::copy(Space &home, bool share) {

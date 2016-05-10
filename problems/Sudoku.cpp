@@ -86,7 +86,7 @@ protected:
     IntVarArray x;
 public:
 #ifdef GECODE_HAS_SET_VARS
-    /// Propagation variants
+    /// Propagation variantS
     enum {
         PROP_NONE, ///< No additional constraints
         PROP_SAME, ///< Use "same" constraint with integer model
@@ -102,13 +102,21 @@ public:
         // to use constraint base search
         std::vector<CBSConstraint*> constraints;
 
+        auto newAllDiff = [&](auto arr) {
+            AllDiffCBS tmp(*this, arr);
+            auto c = reinterpret_cast<AllDiffCBS*>(alloc<char>(sizeof(AllDiffCBS)));
+            memcpy(c, &tmp, sizeof(AllDiffCBS));
+            return c;
+        };
+
         // Constraints for rows and columns
         for (int i=0; i<nn; i++) {
             distinct(*this, m.row(i), opt.icl());
             distinct(*this, m.col(i), opt.icl());
 
-            constraints.push_back(new AllDiffCBS(*this, m.row(i)));
-            constraints.push_back(new AllDiffCBS(*this, m.col(i)));
+            // TODO : Changer ça ici...
+            constraints.push_back(newAllDiff(m.row(i)));
+            constraints.push_back(newAllDiff(m.col(i)));
         }
 
         // Constraints for squares
@@ -116,7 +124,8 @@ public:
             for (int j=0; j<nn; j+=n) {
                 distinct(*this, m.slice(i, i+n, j, j+n), opt.icl());
 
-                constraints.push_back(new AllDiffCBS(*this, m.slice(i, i+n, j, j+n)));
+                // TODO : Changer ça ici...
+                constraints.push_back(newAllDiff(m.slice(i, i+n, j, j+n)));
             }
         }
 
