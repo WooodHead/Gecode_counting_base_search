@@ -143,9 +143,6 @@ AllDiffCBS::MincFactors::~MincFactors() {
     }
 }
 
-AllDiffCBS::MincFactors::MincFactors(const MincFactors &mf)
-        : largestDomainSize(mf.largestDomainSize), mincFactors(mf.mincFactors) {}
-
 double AllDiffCBS::MincFactors::get(int domSize) {
     assert(domSize <= largestDomainSize);
     return mincFactors[domSize - 1];
@@ -188,10 +185,6 @@ AllDiffCBS::LiangBaiFactors::~LiangBaiFactors() {
         heap.free(liangBaiFactors, nbVar);
     }
 }
-
-
-AllDiffCBS::LiangBaiFactors::LiangBaiFactors(const LiangBaiFactors &lb)
-        : nbVar(lb.nbVar), largestDomainSize(lb.largestDomainSize), liangBaiFactors(lb.liangBaiFactors) {}
 
 double AllDiffCBS::LiangBaiFactors::get(int index, int domSize) {
     assert(index < nbVar);
