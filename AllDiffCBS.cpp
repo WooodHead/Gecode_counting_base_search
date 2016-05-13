@@ -63,14 +63,16 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
         _ub.liangBai *= liangBaiFactors.get(index, newDomSize) / liangBaiFactors.get(index, oldDomSize);
     };
 
+    auto minDomVal = minDomValue(); // TODO: Regarder si il n'y aurait pas une meilleur façon de faire ça
+    auto valuesSpan = maxDomValue() - minDomVal + 1;
+
     // Vector that span the domain of every variables for keeping densities. There's no need to set the vector to zero
     // at each iteration.
-    std::vector<double> densities((unsigned long)_x.size());
-    auto minDomVal = minDomValue(); // TODO: Regarder si il n'y aurait pas une meilleur façon de faire ça
+    std::vector<double> densities((unsigned long)valuesSpan);
 
     // In the main loop, for a given value, we need to know which variable can be assigned to the value. The goal of
     // valToVar is to speed up this operation.
-    std::vector<std::set<int>> valToVar((unsigned long)(maxDomValue() - minDomVal + 1));
+    std::vector<std::set<int>> valToVar((unsigned long)valuesSpan);
     for (int var=0; var<_x.size(); var++) {
         for (Gecode::IntVarValues val((IntVar)_x[var]); val(); ++val) {
             valToVar[val.val()-minDomVal].insert(var);
@@ -85,7 +87,7 @@ CBSPosValDensity AllDiffCBS::getDensity(std::function<bool(double,double)> compa
             upperBoundUpdate(varUB, i, _x[i].size(), 1); // Assignation of the variable
             double normalization = 0; // Normalization constant for keeping all densities values between 0 and 1
             // We calculate the density for every value assignment for the variable
-            for (Gecode::IntVarValues val((IntVar)_x[i]); val(); ++val) {
+            for (IntVarValues val((IntVar)_x[i]); val(); ++val) {
                 double *density = &densities[val.val() - minDomVal];
                 auto localUB = varUB;
                 // We update the upper bound for every variable affected by the assignation.
