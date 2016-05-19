@@ -103,9 +103,8 @@ public:
         std::vector<CBSConstraint*> constraints;
 
         auto newAllDiff = [&](auto arr) {
-            AllDiffCBS tmp(*this, arr);
-            auto c = reinterpret_cast<AllDiffCBS*>(alloc<char>(sizeof(AllDiffCBS)));
-            memcpy(c, &tmp, sizeof(AllDiffCBS));
+            char *mem = alloc<char>(sizeof(AllDiffCBS));
+            AllDiffCBS *c = new (mem) AllDiffCBS(*this, arr);
             return c;
         };
 

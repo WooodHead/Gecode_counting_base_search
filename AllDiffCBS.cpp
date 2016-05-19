@@ -39,10 +39,8 @@ AllDiffCBS::AllDiffCBS(Space &home, bool share, AllDiffCBS *c)
         : CBSConstraint(home, share, c) {}
 
 CBSConstraint *AllDiffCBS::copy(Space &home, bool share, CBSConstraint *c) {
-    // TODO : Changer ça ici aussi...
-    AllDiffCBS tmp(home, share, static_cast<AllDiffCBS*>(c));
-    auto ret = reinterpret_cast<AllDiffCBS*>(home.alloc<char>(sizeof(AllDiffCBS)));
-    memcpy(ret, &tmp, sizeof(AllDiffCBS));
+    char *mem = home.alloc<char>(sizeof(AllDiffCBS));
+    auto ret = new (mem) AllDiffCBS(home, share, static_cast<AllDiffCBS*>(c));
     return ret;
 }
 
